@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="static/style/main.css">
+
+</head>
+<body>
+	<main class="container">
+		<div class="overlay"></div>
+		<canvas id="frequencyCanvas" width="1000" height="562"></canvas>
+		<canvas id="channelCanvas" width="75" height="562"></canvas>
+
+		<video id="vid" width="1000">
+			<source src="static/assets/video/domi.mp4" type="video/mp4">
+			Your browser does not support the video tag.
+		</video>
+
+		</div>
+	</main>
+
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="static/js/main.js"></script>
+</body>
+</html>

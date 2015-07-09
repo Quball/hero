@@ -1,0 +1,12 @@
+{
+  "name": "Hero",
+  "version": "0.0.1",
+  "description": "Guitar hero rip",
+  "dependencies": {
+    "express": "4.13.1",
+    "socket.io": "1.3.5",
+    "consolidate": "0.13.1",
+    "htmling": "0.0.7"
+  },
+  "author": "@designatedDoer"
+}

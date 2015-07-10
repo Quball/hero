@@ -1,6 +1,7 @@
 * { margin: 0; padding: 0;}
 body {
-	font-family: "Helvetica Neue Light", "HelveticaNeue-Light", "Helvetica Neue", Calibri, Helvetica, Arial;
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+	font-weight: 300;
 	background: #131313;
 	box-sizing: border-box;
 }
@@ -37,12 +38,20 @@ h1 {
 .overlay {
 	position: absolute;
 	top: 0;
-	left: 0%;
+	left: 0;
 	width: 100%;
 	height: 100%;
-	/*background: hsla(120, 20%, 20%, .9);*/
+	background: hsla(20, 20%, 20%, .2);
+	color: white;
 	z-index: 5;
 }
+
+.overlay button {
+	padding: 8px 16px;
+	border-radius: 4px;
+	margin-top: 8px;
+}
+
 #vid {
 	position: absolute;
 	top: 20px;
@@ -51,10 +60,11 @@ h1 {
 
 #frequencyCanvas {
 	position: absolute;
-	top: 0px;
-	left: 0;
+	top: 562px;
+	left: 50%;
 	z-index: 2;
 	background: transparent;
+	transform: translateX(-50%);
 }
 
 #channelCanvas {
@@ -69,44 +79,76 @@ h1 {
 MOBILE
 */
 
+.controller button.start {
+	font-size: 14px;
+	padding: 16px 16px;
+	border-radius: 4px;
+	margin-top: 8px;
+	position: absolute;
+	bottom: 0;
+	left: 0%;
+	width: 100%;
+	z-index: 100;
+	background: white;
+}
+
+.controller button.start:active {
+	background: #000;
+	color: white;
+}
+
 .score {
 	position: absolute;
-	top: 0;
-	left: 0;
+	top: 8px;
+	left: 8px;
 	font-size: 12px;
-	padding: 8px;
+	padding:  8px 16px;
 	background: hsla(0, 0%, 10%, 0.6);
 	color: white;
+	border-radius: 4px;
+	-webkit-transform: scale(1,1);
+	-webkit-transition: font-size 200ms ease-out;
+}
+
+.score.flash {
+	font-size: 18px;
 }
 
 .playground {
 	position: relative;
 	width: 100vw;
 	height: 100vh;
-	background: #3E6388;
+	background: #ffd185;
 	overflow: hidden;
 }
 
 #ballTemplate {
-	top: -50px;
-	left: -50px;
+	top: -70px;
+	left: -70px;
 }
 
 #ballTemplate, .ball {
 	position: absolute;
-	width: 65px;
-	height: 65px;
+	width: 70px;
+	height: 70px;
 	border-radius: 50%;
-	transition: top 1200ms ease-in;
+	opacity: 1;
+	background: #430d00;
+	border: 2px solid black;
+	box-shadow: 2px 2px 8px black;
 }
 
 .ball {
-	top: -65px;
-	background: black;
+	top: 0px;
+	color: white;
 }
 
-.ball.flash {
-	background: white;
+.falling {
+	-webkit-transition: top 1600ms ease-out;
+}
+
+.ball.out {
+	background: none;
 }
 
 .ball.toBottom {

@@ -30,29 +30,71 @@ app.use(express.static(__dirname + '/static'));
 var server = app.listen(3000);
 var socket = io.listen(server);
 
-var clients = {};
+var clients = {
+	screens : [],
+	ctrls: []
+};
 
 socket.on('connection', function(client){
 
-	client.emit('welcome', 'client');
-
 	client.on('register', function(data){
-		clients[data.id] = client.id;
+
+		var registerID = client.id;
+
+		if(data.id == 'screen') {
+			clients['screens'].push(registerID);
+		} else if(data.id == 'ctrl') {
+			clients['ctrls'].push(registerID);
+		}
+
+		socket.to(registerID).emit('registered', {id: registerID, type: data.id});
+
 		console.log(clients);
 	});
 
-	client.on('button pressed', function(data){
-		console.log('Button pressed on front', data);
+	client.on('ready', function(data){
+		console.log('Client ready: ', data);
+		for(key in clients) {
+			for(var c = 0, b = clients[key].length; c < b; c++) {
+				if (clients[key][c] != data.ctrl) {
+					if(clients['screens'].length) {
+						for(var a = 0, b = clients['screens'].length; a < b; a++) {
+							socket.to(clients['screens'][a]).emit('ready', {player: data.ctrl});
+						}
+					}
+				}
+			}
+		}
 	});
 
-	client.on('disconnect', function(){
-		console.log('Disconnected')
+	client.on('started playing', function(){
+		for(var c = 0, d = clients['ctrls'].length; c < d; c++) {
+			socket.to(clients['ctrls'][c]).emit('started');
+		}
 	});
 
 	client.on('get beat', function(value){
-		if(clients.ctrl) {
-			var reciever = clients[value.to];
+		if(clients['ctrls'].length) {
+			var reciever = value.to;
 			socket.to(reciever).emit('beat', {value: value.value, pos: value.position});
+		}
+	});
+
+	client.on('player score', function(data){
+		for(var e = 0, f = clients['screens'].length; e < f; e++) {
+			socket.to(clients['screens'][e]).emit('score', {id: data.playerId, score: data.score});
+		}
+	});
+
+	client.on('disconnect', function(){
+		console.log('Disconnected', client.id);
+		for(key in clients) {
+			for(var a = 0, b = clients[key].length; a < b; a++) {
+				if(client.id == clients[key][a]) {
+					var indexOfClient = clients[key].indexOf(a);
+					clients[key].splice(indexOfClient, 1);
+				}
+			}
 		}
 	});
 });

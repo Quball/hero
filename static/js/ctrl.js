@@ -6,14 +6,25 @@ $(function(){
 
 	var score = 0;
 
+	var myId = null;
+
 	$playground.css({
 		width: $(window).innerWidth(),
 		height: $(window).innerHeight()
 	});
 
-	var socket = io.connect('http://192.168.3.56:3000');
+	var socket = io.connect('http://192.168.1.123:3000');
 
 	socket.emit('register', { id: 'ctrl' });
+
+	socket.on('registered', function(data) {
+		console.log(data);
+		myId = data.id;
+	});
+
+	socket.on('started', function(){
+		$('.controller button.start').remove();
+	});
 
 	socket.on('beat', function(data) {
 		createBall(data);
@@ -21,11 +32,16 @@ $(function(){
 
 	function createBall(data) {
 
-		var tmpBall = $ballTemplate.clone().removeAttr('id').addClass('ball');
+		var tmpBall = $ballTemplate.clone().removeAttr('id').addClass('falling ball');
+
 		if(data.pos == 0) {
-			tmpBall.css('left', '20%');
-		} else if(data.pos == 15) {
-			tmpBall.css('right', '20%');
+			tmpBall.css({
+				left: '20%'
+			});
+		} else if(data.pos == 1) {
+			tmpBall.css({
+				right: '20%'
+			});
 		}
 
 		$playground.append(tmpBall);
@@ -40,15 +56,31 @@ $(function(){
 
 	$('body').on('touchend', function(e) {
 		var $target = $(e.target);
-		if($target.hasClass('ball')) {
+		if ($target.hasClass('ball')) {
 			console.log('hit');
-			$target.addClass('flash');
-			score += 10;
-			$scoreCounter.text(score);
-			console.log(score);
+			if (!$target.hasClass('out')) {
+
+				$target.addClass('out');
+				score += 10;
+				$scoreCounter.text(score);
+
+				socket.emit('player score', {playerId: myId, score: score});
+
+				console.log(score);
+
+				$scoreCounter.addClass('flash').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
+					function(e) {
+						$scoreCounter.removeClass('flash');
+					});
+			}
+		} else if($target.hasClass('start')) {
+			socket.emit('ready', {ctrl: myId});
 		} else {
 			console.log('miss');
 			score -= 10;
+
+			socket.emit('player score', {playerId: myId, score: score});
+
 			$scoreCounter.text(score);
 			console.log(score);
 		}

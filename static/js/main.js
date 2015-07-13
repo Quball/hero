@@ -4,6 +4,8 @@ var soundReady = false;
 var playersInRoom = [],
 	$playersList = $('.overlay .players');
 
+$('#start').hide();
+
 $(function() {
 	socket.emit('register', {id: 'screen'});
 
@@ -63,7 +65,7 @@ function setupAudioNodes() {
 
 	// setup analyser
 	analyser.smoothingTimeConstant = 0.3;
-	analyser.fftSize = 512;
+	analyser.fftSize = 128;
 
 	bufferLength = analyser.fftSize;
 	dataArray = new Float32Array(bufferLength);
@@ -94,6 +96,8 @@ function loadSound(url) {
 		// decode the data
 		audioCtx.decodeAudioData(request.response, function(buffer) {
 			// when audio is decoded play the sound
+			console.log('Sound ready');
+			$('#start').show();
 			playSound(buffer);
 		}, onError);
 	};
@@ -111,22 +115,29 @@ function playSound(buffer) {
 
 $('#start').on('click', function(){
 	sourceNode.start();
-	video.play();
 	socket.emit('started playing');
+	video.play();
 });
 
 /**
  * Draw to canvas
  */
 
-canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+//canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
 
 // flags controlling socket emits
-var prevLeft = 0,
-	prevLast = null;
+//var prevLeft = 0,
+//	prevLast = 0;
+//
+//var timeSinceLeft = 0,
+//	timeSinceLast = 0;
+//
+//var delayDraw = 750;
+//
+//var thresholdLeft = 9500,
+//	thresholdLast = 9500;
 
 function draw() {
-
 	drawVisual = requestAnimationFrame(draw);
 
 	// get the average for the first channel
@@ -146,63 +157,162 @@ function draw() {
 	var roomLength = playersInRoom.length;
 
 	// BufferLength = 256
-	// Half buffer length = 128
+	// Half buffer length = 64
 
 	for(var i = 1; i < bufferLength; i++) {
 		if (dataArray[i]) {
 			barHeight = dataArray[i];
-			canvasCtx.fillStyle = 'rgb(' + (barHeight + 100) + ',50,50)';
+			canvasCtx.fillStyle = 'rgb(' + (barHeight) + ',50,50)';
 			canvasCtx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
 			x += barWidth + 1;
 			if(i <= 64) {
 				sumLeft += dataArray[i];
-			} else if(i >= 192) {
+			}
+			if(i >= 192) {
 				sumLast += dataArray[i];
 			}
 		}
 	}
 
-	var avgLeft = Math.floor(sumLeft / (bufferLength / 4)),
-		avgLast = Math.floor(sumLast / (bufferLength / 4));
+	var avgLeft = Math.floor(sumLeft / (bufferLength / 2)),
+		avgLast = Math.floor(sumLast / (bufferLength / 2));
 
-	if(avgLeft > 95 && avgLeft != prevLeft) {
-		prevLeft = avgLeft;
-
-		for(var a = 0, b = roomLength; a < b; a++) {
-			socket.emit('get beat', {to: playersInRoom[a], value: avgLeft, position: 0});
+	if(sumLeft > thresholdLeft && sumLeft !== prevLeft) {
+		prevLeft = sumLeft;
+		var tmpTimeLeft = Math.floor(new Date().getTime());
+		if(tmpTimeLeft >= (timeSinceLeft + delayDraw)) {
+			console.log('left', sumLeft);
+			timeSinceLeft = tmpTimeLeft;
+			for(var a = 0, b = roomLength; a < b; a++) {
+				socket.emit('get beat', {to: playersInRoom[a], value: sumLeft, position: 0});
+			}
 		}
 	}
 
-	if(avgLast > 95 && avgLast != prevLast) {
-		prevLast = avgLast;
-
-		for(var c = 0, d = roomLength; c < d; c++) {
-			socket.emit('get beat', {to: playersInRoom[c], value: avgLast, position: 1});
+	if(sumLast > thresholdLast && sumLast !== prevLast) {
+		prevLast = sumLast;
+		var tmpTimeLast = Math.floor(new Date().getTime());
+		if(tmpTimeLast >= (timeSinceLast + delayDraw)) {
+			console.log('last', sumLast);
+			timeSinceLast = tmpTimeLast;
+			for(var c = 0, d = roomLength; c < d; c++) {
+				socket.emit('get beat', {to: playersInRoom[c], value: sumLast, position: 1});
+			}
 		}
 	}
 
 	/** Testing below
 	 *
-	 * Might be good for a lightshow, not for this
+	 * Might be good for a lightshow, not for this */
 
-	//var threshold = 250;
+	//var threshold = 245;
 	//
 	//var peak = [];
 	//
-	//for(var i = 0; i < bufferLength;i++) {
+	//for(var p = 0; p < bufferLength;) {
 	//
-	//	if(dataArray[i] > threshold) {
-	//		peak.push(i);
-	//		i+=1000;
+	//	if(dataArray[p] > threshold) {
+	//		//console.log(dataArray[p], threshold);
+	//		peak.push(p);
+	//		p+=1000;
 	//	}
+	//	p++;
 	//}
 	//
 	//if(peak[0] > 0) {
-	//	console.log(peak);
+	//	if(peak[0] % 2 == 0) {
+	//		console.log('Left ', peak[0]);
+	//		for(var a = 0, b = roomLength; a < b; a++) {
+	//			socket.emit('get beat', {to: playersInRoom[a], value: peak[0], position: 0});
+	//		}
+	//	} else {
+	//		console.log('Right ', peak[0]);
+	//		for(var c = 0, d = roomLength; c < d; c++) {
+	//			socket.emit('get beat', {to: playersInRoom[c], value: peak[0], position: 1});
+	//		}
+	//	}
 	//}
 
-	 End testing */
+	/* End testing */
 
 }
 
-draw();
+//draw();
+
+var threshold = 3500;
+
+// Difficulty
+var delay = 150;
+
+var timeSinceUp = 0,
+	timeSinceDown = 0;
+
+function drawOscilloscope() {
+
+	drawVisual = requestAnimationFrame(drawOscilloscope);
+
+	var dataArray = new Uint8Array(analyser.frequencyBinCount);
+	//analyser.getByteFrequencyData(dataArray);
+	analyser.getByteTimeDomainData(dataArray);
+
+	canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+
+	canvasCtx.lineWidth = 2;
+	canvasCtx.strokeStyle = 'rgb(200, 0, 0)';
+
+	canvasCtx.beginPath();
+
+	var diffUp = 0,
+		diffDown = 0;
+
+	var sliceWidth = Math.ceil(WIDTH * 1.9 / bufferLength);
+	var x = 0;
+
+	var roomLength = playersInRoom.length;
+
+	for(var i = 0; i < bufferLength - 1; i++) {
+
+		var v = dataArray[i] / 128.0;
+		var y = v * HEIGHT/2;
+
+		if(i === 0) {
+			canvasCtx.moveTo(x, y);
+		} else {
+			canvasCtx.lineTo(x, y);
+		}
+		x += sliceWidth;
+
+		if(y > 128) {
+			//console.log(y - 128);
+			diffUp += y - 128;
+		} else if(y < 128) {
+			//console.log(128 - y);
+			diffDown += 128 - y;
+		}
+	}
+
+	if(diffUp !== null && diffUp >= threshold) {
+		var tmpTimeUp = Math.floor(new Date().getTime());
+		if(tmpTimeUp >= (timeSinceUp + delay)) {
+			timeSinceUp = tmpTimeUp;
+			for(var a = 0, b = roomLength; a < b; a++) {
+				socket.emit('get beat', {to: playersInRoom[a], value: diffUp, position: 0});
+			}
+		}
+	}
+
+	if(diffDown !== null && diffDown >= threshold) {
+		var tmpTimeDown = Math.floor(new Date().getTime());
+		if(tmpTimeDown >= (timeSinceDown + delay)) {
+			timeSinceDown = tmpTimeDown;
+			for(var c = 0, d = roomLength; c < d; c++) {
+				socket.emit('get beat', {to: playersInRoom[c], value: diffDown, position: 1});
+			}
+		}
+	}
+
+	canvasCtx.lineTo(WIDTH, HEIGHT / 2);
+	canvasCtx.stroke();
+}
+
+drawOscilloscope();

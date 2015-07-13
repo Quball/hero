@@ -118,7 +118,7 @@ MOBILE
 	position: relative;
 	width: 100vw;
 	height: 100vh;
-	background: #ffd185;
+	background: #3a3a3a;
 	overflow: hidden;
 }
 
@@ -133,22 +133,25 @@ MOBILE
 	height: 70px;
 	border-radius: 50%;
 	opacity: 1;
-	background: #430d00;
-	border: 2px solid black;
-	box-shadow: 2px 2px 8px black;
+	background: #000;
+	box-shadow: 0px 0px 2px #cdcecd;
 }
 
 .ball {
 	top: 0px;
+	text-align: center;
+	padding-top: 8px;
 	color: white;
 }
 
 .falling {
-	-webkit-transition: top 1600ms ease-out;
+	-webkit-transition: top 1200ms ease-out;
 }
 
 .ball.out {
 	background: none;
+	-webkit-box-shadow: 0 0 10px #616161;
+	-webkit-transform: scale(1.5,1.5);
 }
 
 .ball.toBottom {

@@ -27,12 +27,15 @@ $(function(){
 	});
 
 	socket.on('beat', function(data) {
+		console.log(data.pos, data.value);
 		createBall(data);
 	});
 
 	function createBall(data) {
 
 		var tmpBall = $ballTemplate.clone().removeAttr('id').addClass('falling ball');
+
+		tmpBall.text(data.value);
 
 		if(data.pos == 0) {
 			tmpBall.css({

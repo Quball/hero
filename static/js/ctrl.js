@@ -39,17 +39,21 @@ $(function(){
 
 		if(data.pos == 0) {
 			tmpBall.css({
-				left: '20%'
+				left: '20%',
+				top: -(val * 2) + 'px',
+				height: val * 2 + 'px'
 			});
 		} else if(data.pos == 1) {
 			tmpBall.css({
-				right: '20%'
+				right: '20%',
+				top: -(val * 2) + 'px',
+				height: val * 2 + 'px'
 			});
 		}
 
 		$playground.append(tmpBall);
 		setTimeout(function(){
-			tmpBall.addClass('toBottom');
+			tmpBall.addClass('toBottom').css('top', '100%');
 			tmpBall.one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
 				function(e) {
 					tmpBall.remove();

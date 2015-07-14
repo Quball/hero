@@ -1,6 +1,7 @@
 $(function(){
 
-	var $playground = $('.playground'),
+	var $controller = $('main.controller'),
+		$playground = $('.playground'),
 		$ballTemplate = $('#ballTemplate'),
 		$scoreCounter = $('.score');
 
@@ -27,15 +28,14 @@ $(function(){
 	});
 
 	socket.on('beat', function(data) {
-		console.log(data.pos, data.value);
 		createBall(data);
 	});
 
 	function createBall(data) {
 
-		var tmpBall = $ballTemplate.clone().removeAttr('id').addClass('falling ball');
+		var tmpBall = $ballTemplate.clone().removeAttr('id').addClass('falling ball pos' + data.pos).attr('pos', data.pos);
 
-		tmpBall.text(data.value);
+		var val = Math.floor((data.value / 8000) * 100);
 
 		if(data.pos == 0) {
 			tmpBall.css({
@@ -60,7 +60,6 @@ $(function(){
 	$('body').on('touchend', function(e) {
 		var $target = $(e.target);
 		if ($target.hasClass('ball')) {
-			console.log('hit');
 			if (!$target.hasClass('out')) {
 
 				$target.addClass('out');
@@ -69,23 +68,32 @@ $(function(){
 
 				socket.emit('player score', {playerId: myId, score: score});
 
-				console.log(score);
-
-				$scoreCounter.addClass('flash').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
-					function(e) {
-						$scoreCounter.removeClass('flash');
-					});
+				if($target.attr('pos') == 0) {
+					$controller.addClass('flashLeft').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
+						function(e) {
+							$controller.removeClass('flashLeft');
+						});
+				} else {
+					$controller.addClass('flashRight').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
+						function(e) {
+							$controller.removeClass('flashRight');
+						});
+				}
 			}
 		} else if($target.hasClass('start')) {
+			$target.text('Waiting for music...');
 			socket.emit('ready', {ctrl: myId});
 		} else {
-			console.log('miss');
 			score -= 10;
 
 			socket.emit('player score', {playerId: myId, score: score});
 
+			$controller.addClass('miss').one('webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend',
+				function(e) {
+					$controller.removeClass('miss');
+				});
+
 			$scoreCounter.text(score);
-			console.log(score);
 		}
 	});
 

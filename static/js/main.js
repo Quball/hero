@@ -1,10 +1,10 @@
 var socket = io.connect('http://192.168.1.123:3000');
-var soundReady = false;
 
 var playersInRoom = [],
-	$playersList = $('.overlay .players');
+	$playersList = $('.overlay .players'),
+	$startBtn = $('#start');
 
-$('#start').hide();
+$startBtn.hide();
 
 $(function() {
 	socket.emit('register', {id: 'screen'});
@@ -14,23 +14,19 @@ $(function() {
 	});
 
 	socket.on('ready', function(data){
-		if(soundReady) {
-			console.log('PLayers ready: ', data.player);
-			if($.inArray(data.player, playersInRoom) == -1) {
-				playersInRoom.push(data.player)
-				$playersList.append('<p class="' + data.player + '">' + data.player + '<span class="playerscore"></span></p>')
-				console.log(playersInRoom);
-			}
+		console.log('PLayers ready: ', data.player);
+		if($.inArray(data.player, playersInRoom) == -1) {
+			playersInRoom.push(data.player)
+			$playersList.append('<div class="player ' + data.player + '"><p>Name:</p><p>' + data.player + '</p><p>Score:</p><p class="playerscore"></p></div>')
+			console.log(playersInRoom);
 		}
 	});
 
 	socket.on('score', function(data){
 		console.log('client ', data.id, ' has score of ', data.score);
-		$playersList.find('.'+data.id+' span.playerscore').text(data.score);
+		$playersList.find('.'+data.id+' .playerscore').text(data.score);
 	});
 });
-
-var video = $('#vid')[0];
 
 var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 var analyser = audioCtx.createAnalyser(),
@@ -45,14 +41,26 @@ var freqCanvas = $('#frequencyCanvas').get()[0],
 	HEIGHT = freqCanvas.height,
 	drawVisual;
 
-console.log(WIDTH, HEIGHT);
+// MUSIC SETTINGS
+
+// Frequency threshold
+var threshold = 2500;
+// Usually 3500, lower quality stuff 2500
+
+// Difficulty, delay between beats
+var delay = 300;
+// ReallyHard: 250, Hard: 300. Medium: 350, Easy: 400
+// Usually 350, lower quality stuff 300
+
+// Used to calculate time since last beat
+var timeSinceBeat = 0;
 
 /**
  * Setup and load audio
  */
 
 setupAudioNodes();
-loadSound('domi.mp4');
+loadSound('video/domi.mp4');
 
 function setupAudioNodes() {
 	// setup a javascript node
@@ -87,7 +95,7 @@ function setupAudioNodes() {
 
 function loadSound(url) {
 	var request = new XMLHttpRequest();
-	request.open('GET', 'assets/video/'+url, true);
+	request.open('GET', 'assets/'+url, true);
 	request.responseType = 'arraybuffer';
 
 	// when loaded decode the data
@@ -97,7 +105,7 @@ function loadSound(url) {
 		audioCtx.decodeAudioData(request.response, function(buffer) {
 			// when audio is decoded play the sound
 			console.log('Sound ready');
-			$('#start').show();
+			$startBtn.show();
 			playSound(buffer);
 		}, onError);
 	};
@@ -110,142 +118,16 @@ function loadSound(url) {
 
 function playSound(buffer) {
 	sourceNode.buffer = buffer;
-	soundReady = true;
 }
 
-$('#start').on('click', function(){
+$startBtn.on('click', function(){
 	sourceNode.start();
 	socket.emit('started playing');
-	video.play();
 });
 
 /**
  * Draw to canvas
  */
-
-//canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
-
-// flags controlling socket emits
-//var prevLeft = 0,
-//	prevLast = 0;
-//
-//var timeSinceLeft = 0,
-//	timeSinceLast = 0;
-//
-//var delayDraw = 750;
-//
-//var thresholdLeft = 9500,
-//	thresholdLast = 9500;
-
-function draw() {
-	drawVisual = requestAnimationFrame(draw);
-
-	// get the average for the first channel
-	var dataArray = new Uint8Array(analyser.frequencyBinCount);
-	//analyser.getByteFrequencyData(dataArray);
-	analyser.getByteTimeDomainData(dataArray);
-
-	canvasCtx.fillStyle = 'rgb(0, 0, 0)';
-	canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-
-	var barWidth = (WIDTH / bufferLength) * 2.5,
-		barHeight;
-	var x = 0;
-	var	sumLeft = 0,
-		sumLast = 0;
-
-	var roomLength = playersInRoom.length;
-
-	// BufferLength = 256
-	// Half buffer length = 64
-
-	for(var i = 1; i < bufferLength; i++) {
-		if (dataArray[i]) {
-			barHeight = dataArray[i];
-			canvasCtx.fillStyle = 'rgb(' + (barHeight) + ',50,50)';
-			canvasCtx.fillRect(x, HEIGHT - barHeight, barWidth, barHeight);
-			x += barWidth + 1;
-			if(i <= 64) {
-				sumLeft += dataArray[i];
-			}
-			if(i >= 192) {
-				sumLast += dataArray[i];
-			}
-		}
-	}
-
-	var avgLeft = Math.floor(sumLeft / (bufferLength / 2)),
-		avgLast = Math.floor(sumLast / (bufferLength / 2));
-
-	if(sumLeft > thresholdLeft && sumLeft !== prevLeft) {
-		prevLeft = sumLeft;
-		var tmpTimeLeft = Math.floor(new Date().getTime());
-		if(tmpTimeLeft >= (timeSinceLeft + delayDraw)) {
-			console.log('left', sumLeft);
-			timeSinceLeft = tmpTimeLeft;
-			for(var a = 0, b = roomLength; a < b; a++) {
-				socket.emit('get beat', {to: playersInRoom[a], value: sumLeft, position: 0});
-			}
-		}
-	}
-
-	if(sumLast > thresholdLast && sumLast !== prevLast) {
-		prevLast = sumLast;
-		var tmpTimeLast = Math.floor(new Date().getTime());
-		if(tmpTimeLast >= (timeSinceLast + delayDraw)) {
-			console.log('last', sumLast);
-			timeSinceLast = tmpTimeLast;
-			for(var c = 0, d = roomLength; c < d; c++) {
-				socket.emit('get beat', {to: playersInRoom[c], value: sumLast, position: 1});
-			}
-		}
-	}
-
-	/** Testing below
-	 *
-	 * Might be good for a lightshow, not for this */
-
-	//var threshold = 245;
-	//
-	//var peak = [];
-	//
-	//for(var p = 0; p < bufferLength;) {
-	//
-	//	if(dataArray[p] > threshold) {
-	//		//console.log(dataArray[p], threshold);
-	//		peak.push(p);
-	//		p+=1000;
-	//	}
-	//	p++;
-	//}
-	//
-	//if(peak[0] > 0) {
-	//	if(peak[0] % 2 == 0) {
-	//		console.log('Left ', peak[0]);
-	//		for(var a = 0, b = roomLength; a < b; a++) {
-	//			socket.emit('get beat', {to: playersInRoom[a], value: peak[0], position: 0});
-	//		}
-	//	} else {
-	//		console.log('Right ', peak[0]);
-	//		for(var c = 0, d = roomLength; c < d; c++) {
-	//			socket.emit('get beat', {to: playersInRoom[c], value: peak[0], position: 1});
-	//		}
-	//	}
-	//}
-
-	/* End testing */
-
-}
-
-//draw();
-
-var threshold = 3500;
-
-// Difficulty
-var delay = 150;
-
-var timeSinceUp = 0,
-	timeSinceDown = 0;
 
 function drawOscilloscope() {
 
@@ -283,33 +165,53 @@ function drawOscilloscope() {
 		x += sliceWidth;
 
 		if(y > 128) {
-			//console.log(y - 128);
 			diffUp += y - 128;
 		} else if(y < 128) {
-			//console.log(128 - y);
 			diffDown += 128 - y;
 		}
 	}
 
-	if(diffUp !== null && diffUp >= threshold) {
-		var tmpTimeUp = Math.floor(new Date().getTime());
-		if(tmpTimeUp >= (timeSinceUp + delay)) {
-			timeSinceUp = tmpTimeUp;
-			for(var a = 0, b = roomLength; a < b; a++) {
-				socket.emit('get beat', {to: playersInRoom[a], value: diffUp, position: 0});
+	if(diffUp >= threshold || diffDown >= threshold) {
+
+		var tmpBeatTime = Math.floor(new Date().getTime());
+
+		if(diffUp >= threshold) {
+			if(tmpBeatTime >= (timeSinceBeat + delay)) {
+				timeSinceBeat = tmpBeatTime;
+				for(var a = 0, b = roomLength; a < b; a++) {
+					socket.emit('get beat', {to: playersInRoom[a], value: diffUp, position: 0});
+				}
+			}
+		}
+		if(diffDown >= threshold) {
+			if(tmpBeatTime >= (timeSinceBeat + delay)) {
+				timeSinceBeat = tmpBeatTime;
+				for(var c = 0, d = roomLength; c < d; c++) {
+					socket.emit('get beat', {to: playersInRoom[c], value: diffDown, position: 1});
+				}
 			}
 		}
 	}
 
-	if(diffDown !== null && diffDown >= threshold) {
-		var tmpTimeDown = Math.floor(new Date().getTime());
-		if(tmpTimeDown >= (timeSinceDown + delay)) {
-			timeSinceDown = tmpTimeDown;
-			for(var c = 0, d = roomLength; c < d; c++) {
-				socket.emit('get beat', {to: playersInRoom[c], value: diffDown, position: 1});
-			}
-		}
-	}
+	//if(diffUp !== null && diffUp >= threshold) {
+	//	var tmpTimeUp = Math.floor(new Date().getTime());
+	//	if(tmpTimeUp >= (timeSinceBeat + delay)) {
+	//		timeSinceBeat = tmpTimeUp;
+	//		for(var a = 0, b = roomLength; a < b; a++) {
+	//			socket.emit('get beat', {to: playersInRoom[a], value: diffUp, position: 0});
+	//		}
+	//	}
+	//}
+	//
+	//if(diffDown !== null && diffDown >= threshold) {
+	//	var tmpTimeDown = Math.floor(new Date().getTime());
+	//	if(tmpTimeDown >= (timeSinceBeat + delay)) {
+	//		timeSinceBeat = tmpTimeDown;
+	//		for(var c = 0, d = roomLength; c < d; c++) {
+	//			socket.emit('get beat', {to: playersInRoom[c], value: diffDown, position: 1});
+	//		}
+	//	}
+	//}
 
 	canvasCtx.lineTo(WIDTH, HEIGHT / 2);
 	canvasCtx.stroke();

@@ -36,20 +36,28 @@ h1 {
 }
 
 .overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
+	display: block;
+	width: 1000px;
+	margin: 0 auto;
 	height: 100%;
-	background: hsla(20, 20%, 20%, .2);
 	color: white;
-	z-index: 5;
 }
 
-.overlay button {
+.overlay button#start {
+	display: block;
 	padding: 8px 16px;
 	border-radius: 4px;
-	margin-top: 8px;
+	width: 1000px;
+	margin: 16px auto;
+	background: hsla(0, 0%, 90%, 0.6);
+	color: #1e1e1e;
+	font-size: 38px;
+	border: none;
+	cursor: pointer;
+}
+.overlay button#start:hover {
+	background: white;
+	color: #FFBE13;
 }
 
 #vid {
@@ -59,12 +67,10 @@ h1 {
 }
 
 #frequencyCanvas {
-	position: absolute;
-	top: 562px;
-	left: 50%;
+	display: block;
+	margin: 0 auto;
 	z-index: 2;
 	background: transparent;
-	transform: translateX(-50%);
 }
 
 #channelCanvas {
@@ -75,6 +81,21 @@ h1 {
 	background: black;
 }
 
+.players > h1 {
+	margin: 24px 0;
+}
+
+.players .player {
+	min-width: 200px;
+	display: inline-block;
+	margin-left: -2px;
+	padding: 8px;
+}
+
+.players .player p {
+	margin: 16px 0;
+}
+
 /*
 MOBILE
 */
@@ -82,12 +103,11 @@ MOBILE
 .controller button.start {
 	font-size: 14px;
 	padding: 16px 16px;
-	border-radius: 4px;
-	margin-top: 8px;
 	position: absolute;
-	bottom: 0;
-	left: 0%;
+	top: 0;
+	left: 0;
 	width: 100%;
+	height: 100%;
 	z-index: 100;
 	background: white;
 }
@@ -98,28 +118,59 @@ MOBILE
 }
 
 .score {
+	box-sizing: border-box;
 	position: absolute;
+	text-align: center;
+	width: 80px;
 	top: 8px;
-	left: 8px;
-	font-size: 12px;
+	left: 50%;
+	font-size: 16px;
 	padding:  8px 16px;
-	background: hsla(0, 0%, 10%, 0.6);
-	color: white;
+	background: hsla(0, 0%, 90%, 0.6);
+	color: #1e1e1e;
+	margin-left:  -40px;
 	border-radius: 4px;
 	-webkit-transform: scale(1,1);
-	-webkit-transition: font-size 200ms ease-out;
-}
-
-.score.flash {
-	font-size: 18px;
+	-webkit-transition: all 200ms ease-out;
 }
 
 .playground {
 	position: relative;
 	width: 100vw;
 	height: 100vh;
-	background: #3a3a3a;
 	overflow: hidden;
+}
+
+.playground .left, .playground .right {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 50%;
+	background: rgba(123, 123, 123, 0.5);
+	-webkit-transition: all 200ms ease-out;
+}
+
+.playground .right {
+	left: 50%;
+	background: rgba(123, 123, 123, 0.5);
+}
+
+.controller.miss .score {
+	background: red;
+}
+
+/*.controller.flashLeft .playground .left {*/
+	/*background: rgba(123, 123, 123, 0.27);*/
+/*}*/
+/*.controller.flashRight .playground .right {*/
+	/*background: rgba(123, 123, 123, 0.27);*/
+/*}*/
+
+.controller.flashLeft .score, .controller.flashRight .score {
+	background: white;
+	color: #FFBE13;
+	-webkit-transform: scale(1.5,1.5);
 }
 
 #ballTemplate {
@@ -129,29 +180,28 @@ MOBILE
 
 #ballTemplate, .ball {
 	position: absolute;
-	width: 70px;
-	height: 70px;
 	border-radius: 50%;
-	opacity: 1;
-	background: #000;
-	box-shadow: 0px 0px 2px #cdcecd;
+	-webkit-box-shadow: 0px 0px 8px 4px #fff;
 }
 
 .ball {
-	top: 0px;
+	top: 0;
+	width: 70px;
+	height: 70px;
 	text-align: center;
 	padding-top: 8px;
 	color: white;
+	background: rgb(38, 38, 38);
 }
 
 .falling {
-	-webkit-transition: top 1200ms ease-out;
+	-webkit-transition: top 1400ms ease-out;
 }
 
 .ball.out {
 	background: none;
-	-webkit-box-shadow: 0 0 10px #616161;
-	-webkit-transform: scale(1.5,1.5);
+	-webkit-box-shadow: 0 0px 40px 10px #000;
+	-webkit-transform: scale(.5,.5);
 }
 
 .ball.toBottom {

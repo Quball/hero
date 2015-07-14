@@ -13,23 +13,12 @@
 <body>
 
 	<div class="overlay">
-		<p>Players:</p>
+		<canvas id="frequencyCanvas" width="1000" height="256"></canvas>
+		<button id="start">START</button>
 		<div class="players">
+			<h1>Players</h1>
 		</div>
-		<button id="start">
-			START
-		</button>
 	</div>
-
-	<main class="container">
-		<!--<canvas id="channelCanvas" width="75" height="562"></canvas>-->
-
-		<video id="vid" width="1000" muted="true">
-			<source src="static/assets/video/domi.mp4" type="video/mp4">
-			Your browser does not support the video tag.
-		</video>
-	</main>
-	<canvas id="frequencyCanvas" width="1000" height="256"></canvas>
 
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
